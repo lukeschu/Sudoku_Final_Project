@@ -13,9 +13,13 @@
 // 030009600006000000950003000008045032603000504490310800000700069000000400007100020;
 // 203000506060000070000020000000040000080905040096000720008703200005060800100504007;
 // 000103000600000007009504200000050000010906070207000906780030019023709650000000000;
+// 080900700000370180047006050009000008000020000700000600070200510015083000003004020;
+// 060209070007000100800000002042000360000452000000030000000107000003000800024000610;
+// 060050010008000400000408000703000604002904700040030020805060307400105002200000005; ???
+// 080500070500000103092080600000804001006000300100306000009030720703000005010002030; good test for naked doubles
 
 let testString =
-  "000103000600000007009504200000050000010906070207000906780030019023709650000000000";
+  "301006000069000700070192000700000250600070003058000009000937060006000810000600902";
 function stringToSudoku(str) {
   let puzzle = [];
   for (let i = 0; i < 9; i++) {
@@ -31,6 +35,19 @@ function stringToSudoku(str) {
 }
 let input = stringToSudoku(testString);
 console.log(input);
+
+function flattenToStringVisual(arr) {
+  let flattened = [];
+  for (let i = 0; i < 9; i++) {
+    flattened.push(arr[i].map((x) => (typeof x == "number" ? x : 0)));
+  }
+  for (let i = 0; i < 9; i++) {
+    flattened[i] = flattened[i].join(" ");
+  }
+
+  flattened = flattened.join("\n");
+  return flattened;
+}
 
 //----------------------------------
 
@@ -218,12 +235,33 @@ function sudoku(puzzle) {
     return arr;
   }
 
+  function findNakedDoubles(arr, row) {
+    let doubles = arr[row].filter((x) => x.length == 2);
+    let sortedDubs = doubles
+      .sort((a, b) => a[1] - b[1])
+      .sort((a, b) => a[0] - b[0]);
+    let nakedPairs = [];
+    for (let i = 0; i < sortedDubs.length - 1; i++) {
+      if (testFlatArrayEquality(sortedDubs[i], sortedDubs[i + 1])) {
+        nakedPairs.push(sortedDubs[i]);
+        console.log(`row ${row} naked pairs:`, nakedPairs);
+      }
+    }
+  }
+
   iterateUntilStable(candidateArray);
   iterateHiddenUntilStable(candidateArray);
 
+  for (let i = 0; i < 9; i++) {
+    findNakedDoubles(candidateArray, i);
+  }
+
   console.log("rows:", candidateArray);
-  console.log("columns:", flipRowColumn(candidateArray));
-  console.log("boxes:", rowsToBoxes(candidateArray));
+  // console.log("columns:", flipRowColumn(candidateArray));
+  // console.log("boxes:", rowsToBoxes(candidateArray));
+
+  console.log(flattenToStringVisual(input));
+  console.log(flattenToStringVisual(candidateArray));
   return candidateArray;
 }
 
