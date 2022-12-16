@@ -19,7 +19,7 @@
 // 080500070500000103092080600000804001006000300100306000009030720703000005010002030; good test for naked doubles
 
 let testString =
-  "301006000069000700070192000700000250600070003058000009000937060006000810000600902";
+  "060209070007000100800000002042000360000452000000030000000107000003000800024000610";
 function stringToSudoku(str) {
   let puzzle = [];
   for (let i = 0; i < 9; i++) {
@@ -235,7 +235,7 @@ function sudoku(puzzle) {
     return arr;
   }
 
-  function findNakedDoubles(arr, row) {
+  function findAndFilterNakedDoublesRow(arr, row) {
     let doubles = arr[row].filter((x) => x.length == 2);
     let sortedDubs = doubles
       .sort((a, b) => a[1] - b[1])
@@ -244,21 +244,53 @@ function sudoku(puzzle) {
     for (let i = 0; i < sortedDubs.length - 1; i++) {
       if (testFlatArrayEquality(sortedDubs[i], sortedDubs[i + 1])) {
         nakedPairs.push(sortedDubs[i]);
-        console.log(`row ${row} naked pairs:`, nakedPairs);
+        nakedPairs = nakedPairs.flat();
+        console.log(`row ${row} naked pair numbers:`, nakedPairs);
       }
     }
+    for (let i = 0; i < 9; i++) {
+      arr[row] = arr[row].map((x) =>
+        typeof x == "number"
+          ? x
+          : x.length > 2
+          ? x.filter((e) => !nakedPairs.includes(e))
+          : x
+      );
+    }
+  }
+
+  function filterNakedDoublesRows(arr) {
+    for (let i = 0; i < 9; i++) {
+      findAndFilterNakedDoublesRow(arr, i);
+    }
+    return (arr = filterSolutions(arr));
+  }
+
+  function filterNakedDoublesColumns(arr) {
+    arr = flipRowColumn(arr);
+    arr = filterNakedDoublesRows(arr);
+    arr = flipRowColumn(arr);
+    return (arr = filterSolutions(arr));
+  }
+
+  function filterNakedDoublesBoxes(arr) {
+    arr = boxesToRows(arr);
+    arr = filterNakedDoublesRows(arr);
+    arr = rowsToBoxes(arr);
+    return (arr = filterSolutions(arr));
   }
 
   iterateUntilStable(candidateArray);
   iterateHiddenUntilStable(candidateArray);
-
-  for (let i = 0; i < 9; i++) {
-    findNakedDoubles(candidateArray, i);
-  }
+  filterNakedDoublesRows(candidateArray);
+  filterNakedDoublesColumns(candidateArray);
+  filterNakedDoublesBoxes(candidateArray);
+  iterateUntilStable(candidateArray);
+  iterateHiddenUntilStable(candidateArray);
 
   console.log("rows:", candidateArray);
-  // console.log("columns:", flipRowColumn(candidateArray));
-  // console.log("boxes:", rowsToBoxes(candidateArray));
+  console.log("columns:", flipRowColumn(candidateArray));
+  console.log("boxes:", rowsToBoxes(candidateArray));
 
   console.log(flattenToStringVisual(input));
   console.log(flattenToStringVisual(candidateArray));
