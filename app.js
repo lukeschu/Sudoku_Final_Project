@@ -1,6 +1,21 @@
-let testString =
-  "010020300004005060070000008006900070000100002030048000500006040000800106008000000";
+// Problematic:
+// 009000070700609000006002908092060030000205000080090560601800400000107003040000200;
+// 008060100605201908000407000007000200300020004090040080000906000010070030050000020;
+// 000934000000080000081020950000609000209000605007000400000010000062000830004508700;
+// 004000700000514000050203080700392008000000000805000302500000009308000407000786000;
+// 008163500000000000300895006702000908950000042600000005030010050075000480000504000; **Naked Triples??
+// 004308700006070400300000008063090870010000090000060000600000005001506200200107003; **??
+// 000805000605403801030000060009000400020030070000908000001050300090000010008090200;
+// 461000009000019000270000100804200030000000000020005608002000065000450000100000982;
+// 005800001000100465200090000062000090509000806040000570000040009354007000900003600;
+// 003000900000817000600090008400060001050103090106040503097000140000080000024000860;
+// 080060070004020500090000040970000034030000050605807109001080400000304000000602000;
+// 030009600006000000950003000008045032603000504490310800000700069000000400007100020;
+// 203000506060000070000020000000040000080905040096000720008703200005060800100504007;
+// 000103000600000007009504200000050000010906070207000906780030019023709650000000000;
 
+let testString =
+  "000103000600000007009504200000050000010906070207000906780030019023709650000000000";
 function stringToSudoku(str) {
   let puzzle = [];
   for (let i = 0; i < 9; i++) {
@@ -14,13 +29,13 @@ function stringToSudoku(str) {
   // console.log(puzzle);
   return puzzle;
 }
-
 let input = stringToSudoku(testString);
 console.log(input);
 
+//----------------------------------
+
 function sudoku(puzzle) {
   let candidateArray = [];
-
   for (let i = 0; i < 9; i++) {
     candidateArray.push(
       puzzle[i].map((x) => (x === 0 ? [1, 2, 3, 4, 5, 6, 7, 8, 9] : [x]))
@@ -36,6 +51,31 @@ function sudoku(puzzle) {
     return arr;
   }
   filterSolutions(candidateArray);
+
+  function testFlatArrayEquality(arr1, arr2) {
+    let flat1 = arr1.flat();
+    let flat2 = arr2.flat();
+    if (flat1.length != flat2.length) return false;
+    for (let i = 0; i < flat1.length; i++) {
+      if (flat1[i] !== flat2[i]) return false;
+    }
+    return true;
+  }
+
+  function testBoardEquality(arr1, arr2) {
+    for (let i = 0; i < 9; i++) {
+      if (!testFlatArrayEquality(arr1[i], arr2[i])) return false;
+    }
+    return true;
+  }
+
+  function rowCandidates(row) {
+    let rowCands = [];
+    for (let i = 0; i < 9; i++) {
+      if (typeof row[i] == "object" && row[i].length > 1) rowCands.push(row[i]);
+    }
+    return rowCands.flat();
+  }
 
   function filterByRow(arr) {
     for (let i = 0; i < 9; i++) {
@@ -109,39 +149,81 @@ function sudoku(puzzle) {
     return (candidateArray = filterSolutions(arr));
   }
 
-  function oneFullPass(arr) {
+  function oneFullNakedPass(arr) {
     let rFilter = filterByRow(arr);
     let cFilter = filterByColumn(rFilter);
     let bFilter = filterByBox(cFilter);
     return (candidateArray = filterSolutions(bFilter));
   }
 
-  function testFlatArrayEquality(arr1, arr2) {
-    let flat1 = arr1.flat();
-    let flat2 = arr2.flat();
-    if (flat1.length != flat2.length) return false;
-    for (let i = 0; i < flat1.length; i++) {
-      if (flat1[i] !== flat2[i]) return false;
-    }
-    return true;
-  }
-
-  function testBoardEquality(arr1, arr2) {
-    for (let i = 0; i < 9; i++) {
-      if (!testFlatArrayEquality(arr1[i], arr2[i])) return false;
-    }
-    return true;
-  }
-
-  let iterationCount = 0;
   function iterateUntilStable(arr) {
-    while (!testBoardEquality(arr, oneFullPass(arr))) {
-      iterationCount++;
-      arr = oneFullPass(arr);
+    while (!testBoardEquality(arr, oneFullNakedPass(arr))) {
+      arr = oneFullNakedPass(arr);
     }
+    return arr;
+  }
+
+  function findHiddenSinglesRow(arr, row) {
+    for (let i = 0; i < 9; i++) {
+      let cands = rowCandidates(arr[row]);
+      let hiddens = [];
+      for (let ele of cands) {
+        if (cands.indexOf(ele) == cands.lastIndexOf(ele)) {
+          hiddens.push(ele);
+        }
+      }
+      return hiddens;
+    }
+  }
+
+  function filterHiddenSinglesByRow(arr) {
+    for (let i = 0; i < 9; i++) {
+      let hiddens = findHiddenSinglesRow(arr, i);
+      // console.log(arr[i], hiddens);
+      for (let ele of hiddens) {
+        arr[i] = arr[i].map((x) =>
+          typeof x == "number" ? x : x.includes(ele) ? ele : x
+        );
+        // console.log(arr[i]);
+      }
+    }
+    return (candidateArray = arr);
+  }
+
+  function filterHiddenSinglesByColumn(arr) {
+    arr = flipRowColumn(filterHiddenSinglesByRow(flipRowColumn(arr)));
+    return (candidateArray = arr);
+  }
+
+  function filterHiddenSinglesByBox(arr) {
+    arr = boxesToRows(filterHiddenSinglesByRow(rowsToBoxes(arr)));
+    return (candidateArray = arr);
+  }
+
+  function oneFullHiddenPass(arr) {
+    let rFilter = filterHiddenSinglesByRow(arr);
+    rFilter = iterateUntilStable(rFilter);
+    let cFilter = filterHiddenSinglesByColumn(rFilter);
+    cFilter = iterateUntilStable(cFilter);
+    let bFilter = filterHiddenSinglesByBox(cFilter);
+    bFilter = iterateUntilStable(bFilter);
+    return (candidateArray = filterSolutions(bFilter));
+  }
+
+  function iterateHiddenUntilStable(arr) {
+    while (!testBoardEquality(arr, oneFullHiddenPass(arr))) {
+      arr = oneFullHiddenPass(arr);
+    }
+    iterateUntilStable(arr);
+    return arr;
   }
 
   iterateUntilStable(candidateArray);
+  iterateHiddenUntilStable(candidateArray);
+
+  console.log("rows:", candidateArray);
+  console.log("columns:", flipRowColumn(candidateArray));
+  console.log("boxes:", rowsToBoxes(candidateArray));
   return candidateArray;
 }
 
@@ -149,4 +231,7 @@ function sudoku(puzzle) {
 // Now we need to build in solving techniques, from simple to complex!!
 // We will begin with the NAKED DOUBLES technique. Ooh-la-laa...
 
-console.log(sudoku(input));
+let start = Date.now();
+sudoku(input);
+let timeTaken = Date.now() - start;
+console.log("Total time taken : " + timeTaken + " milliseconds");
