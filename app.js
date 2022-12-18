@@ -16,10 +16,24 @@
 // 080900700000370180047006050009000008000020000700000600070200510015083000003004020;
 // 060209070007000100800000002042000360000452000000030000000107000003000800024000610;
 // 060050010008000400000408000703000604002904700040030020805060307400105002200000005; ???
-// 080500070500000103092080600000804001006000300100306000009030720703000005010002030; good test for naked doubles
+// 080500070500000103092080600000804001006000300100306000009030720703000005010002030; good test for naked doubles, then triples
+// 089500000200901030000000209010000002705000304300000070408000000060208001000003920; good test for doubles
+// 004105700008792100701000503075000260603000805000608000000000000007020600150000087;
+// 408005000900000600300090840000000004501208709700000000032010005005000008000400301; good test for naked triples
+// 040760000000000608070001000002308005400000009100604300000200090903000000000085020; ""
+// 100090004004000300002000900200000005050837020001000700000603000028504670040982010; ""
+// 007000082600200000024910000000000627400102003782000000000095470000008005940000200;
+// 020000760000200103000816000874003900000000000009100857000345000903002000065000020;
+// 601050004030940260000000000000503607500020008307406000000000000089065070100030502;
+// 000005740509000000804700350100503800000060000007408001023006507000000904095100000; this is a hard puzzle that we can solve!!
+// 009403800040000020050807010300070008000902000500030009200000004005000100060000030;
+// 009403800040000020050807010300070008000902000500030009200000004005000100060000030; naked triples
+// 000705000807000305000010000090000020700000003026000490030102070500060002100304009; good test for naked quad
+// 206800017380000040005000309000605002000080000500901000702000900010000023860009405;
+// 000000020700002630000903047012007000090000050000800370460509000071300004080000000; naked quad row 3
 
 let testString =
-  "060209070007000100800000002042000360000452000000030000000107000003000800024000610";
+  "000000020700002630000903047012007000090000050000800370460509000071300004080000000";
 function stringToSudoku(str) {
   let puzzle = [];
   for (let i = 0; i < 9; i++) {
@@ -33,6 +47,7 @@ function stringToSudoku(str) {
   // console.log(puzzle);
   return puzzle;
 }
+
 let input = stringToSudoku(testString);
 console.log(input);
 
@@ -252,39 +267,44 @@ function sudoku(puzzle) {
       arr[row] = arr[row].map((x) =>
         typeof x == "number"
           ? x
-          : x.length > 2
+          : x.filter((e) => !nakedPairs.includes(e)).length > 0
           ? x.filter((e) => !nakedPairs.includes(e))
           : x
       );
     }
   }
 
-  function filterNakedDoublesRows(arr) {
+  function filterNakedDoublesByRows(arr) {
     for (let i = 0; i < 9; i++) {
       findAndFilterNakedDoublesRow(arr, i);
     }
-    return (arr = filterSolutions(arr));
+    return (candidateArray = filterSolutions(arr));
   }
 
-  function filterNakedDoublesColumns(arr) {
+  function filterNakedDoublesByColumns(arr) {
     arr = flipRowColumn(arr);
-    arr = filterNakedDoublesRows(arr);
+    arr = filterNakedDoublesByRows(arr);
     arr = flipRowColumn(arr);
-    return (arr = filterSolutions(arr));
+    return (candidateArray = filterSolutions(arr));
   }
 
-  function filterNakedDoublesBoxes(arr) {
+  function filterNakedDoublesByBoxes(arr) {
     arr = boxesToRows(arr);
-    arr = filterNakedDoublesRows(arr);
+    arr = filterNakedDoublesByRows(arr);
     arr = rowsToBoxes(arr);
-    return (arr = filterSolutions(arr));
+    return (candidateArray = filterSolutions(arr));
   }
 
   iterateUntilStable(candidateArray);
   iterateHiddenUntilStable(candidateArray);
-  filterNakedDoublesRows(candidateArray);
-  filterNakedDoublesColumns(candidateArray);
-  filterNakedDoublesBoxes(candidateArray);
+  filterNakedDoublesByRows(candidateArray);
+  filterNakedDoublesByColumns(candidateArray);
+  filterNakedDoublesByBoxes(candidateArray);
+  iterateUntilStable(candidateArray);
+  iterateHiddenUntilStable(candidateArray);
+  filterNakedDoublesByRows(candidateArray);
+  filterNakedDoublesByColumns(candidateArray);
+  filterNakedDoublesByBoxes(candidateArray);
   iterateUntilStable(candidateArray);
   iterateHiddenUntilStable(candidateArray);
 
