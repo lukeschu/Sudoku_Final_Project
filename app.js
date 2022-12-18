@@ -31,9 +31,13 @@
 // 000705000807000305000010000090000020700000003026000490030102070500060002100304009; good test for naked quad
 // 206800017380000040005000309000605002000080000500901000702000900010000023860009405;
 // 000000020700002630000903047012007000090000050000800370460509000071300004080000000; naked quad row 3
+// 090000050000708000002060800000000000061805730308000201004000300000914000010030080;
+// 060301050400000002030020010500000008003000400200000009010070090300000006090205070; 4 star from today's paper
+// 903000008000002000008400607030201900000000000007304010206003100000700000800000705; 5 star from today's paper (clearly overrated difficulty)
+// 500030000080051070000206004073000000060749080000000740100607000050390010000010006; good test for naked triples;
 
 let testString =
-  "000000020700002630000903047012007000090000050000800370460509000071300004080000000";
+  "500030000080051070000206004073000000060749080000000740100607000050390010000010006";
 function stringToSudoku(str) {
   let puzzle = [];
   for (let i = 0; i < 9; i++) {
@@ -295,17 +299,19 @@ function sudoku(puzzle) {
     return (candidateArray = filterSolutions(arr));
   }
 
+  function oneFullNakedDoublePass(arr) {
+    let rFilter = filterNakedDoublesByRows(arr);
+    rFilter = iterateUntilStable(rFilter);
+    let cFilter = filterNakedDoublesByColumns(rFilter);
+    cFilter = iterateUntilStable(cFilter);
+    let bFilter = filterNakedDoublesByBoxes(cFilter);
+    bFilter = iterateUntilStable(bFilter);
+    return (candidateArray = filterSolutions(bFilter));
+  }
+
   iterateUntilStable(candidateArray);
   iterateHiddenUntilStable(candidateArray);
-  filterNakedDoublesByRows(candidateArray);
-  filterNakedDoublesByColumns(candidateArray);
-  filterNakedDoublesByBoxes(candidateArray);
-  iterateUntilStable(candidateArray);
-  iterateHiddenUntilStable(candidateArray);
-  filterNakedDoublesByRows(candidateArray);
-  filterNakedDoublesByColumns(candidateArray);
-  filterNakedDoublesByBoxes(candidateArray);
-  iterateUntilStable(candidateArray);
+  oneFullNakedDoublePass(candidateArray);
   iterateHiddenUntilStable(candidateArray);
 
   console.log("rows:", candidateArray);
